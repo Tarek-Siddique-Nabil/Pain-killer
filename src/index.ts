@@ -2,12 +2,14 @@ import { Hono } from "hono";
 import { logger } from "hono/logger";
 import { initializePlayer } from "./config/player";
 import { initializeClient } from "./config/client";
+import { initializeEvents } from "./events";
 
 const app = new Hono();
 
 app.use(logger());
 initializePlayer();
 initializeClient();
+initializeEvents();
 
 // client.on("messageCreate", (message) => {
 //   console.log("🚀 ~ client.on ~ message:", message.content);
@@ -17,27 +19,6 @@ initializeClient();
 //   }
 // });
 
-// client.on("messageCreate", async (message) => {
-//   const prefix = "!";
-//   if (!message.content.startsWith(prefix)) return;
-
-//   const args = message.content.slice(prefix.length).trim().split(/ +/);
-//   const command = args.shift();
-
-//   try {
-//     if (!message.guild || !player) return;
-//     await player.context.provide({ guild: message.guild }, () => {
-//       switch (command) {
-//         case "play":
-//           return PlayCommand(message, args.join(" "));
-//         case "np":
-//           return NowPlayingCommand(message);
-//         case "stop":
-//           return StopCommand(message);
-//       }
-//     });
-//   } catch (error) {}
-// });
 // client.on("messageCreate", async (message) => {
 //   await message.guild?.commands.set([
 //     {

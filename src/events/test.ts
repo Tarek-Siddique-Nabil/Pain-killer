@@ -1,6 +1,6 @@
 import { client } from "@/config/client";
 
-const run = () => {
+export const test = () => {
   if (!client) return;
   client.on("messageCreate", (message) => {
     console.log("🚀 ~ client.on ~ message:", message.content);
@@ -10,5 +10,3 @@ const run = () => {
     }
   });
 };
-
-run();
