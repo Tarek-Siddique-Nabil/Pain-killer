@@ -2,7 +2,7 @@ import type { CommandData, SlashCommandProps } from "commandkit";
 
 export const data: CommandData = {
   name: "ping",
-  description: "Pong!",
+  description: "Pong!!!",
 };
 
 export function run({ interaction, client, handler }: SlashCommandProps) {
