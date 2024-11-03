@@ -1,6 +1,6 @@
 import type { CommandKit } from "commandkit";
 import { useMainPlayer, useQueue } from "discord-player";
-import type { Client, Message } from "discord.js";
+import { EmbedBuilder, type Client, type Message } from "discord.js";
 
 export default async function (
   message: Message<true>,
@@ -9,79 +9,90 @@ export default async function (
 ) {
   const player = useMainPlayer();
   const prefix = "!";
+  const channel = message.member?.voice.channel;
   if (!message.content.startsWith(prefix)) return;
 
   const args = message.content.slice(prefix.length).trim().split(/ +/);
   const command = args.shift()?.toLowerCase();
 
-  try {
-    await player.context.provide({ guild: message.guild }, () => {
-      switch (command) {
-        case "play":
-          return PlayCommand(message, args.join(" "));
-        case "np":
-          return NowPlayingCommand(message);
-        case "stop":
-          return StopCommand(message);
-        default:
-          return message.reply("Unknown command!");
-      }
+  if (!channel) {
+    return message.reply("You need to join a voice channel first!");
+  }
+  if (!command) {
+    return;
+  }
+
+  if (command === "play") {
+    const result = await player.search(args.join(" "), {
+      requestedBy: message.author,
     });
-  } catch (error) {
-    console.error("Error handling command:", error);
-    await message.reply("An error occurred while processing the command.");
+    console.log(result.tracks);
+    if (!result.tracks.length) {
+      const embed = new EmbedBuilder()
+        .setTitle("No tracks found")
+        .setDescription("No tracks were found for the given query")
+        .setColor(0xff0000)
+        .setTimestamp();
+      return message.reply({ embeds: [embed] });
+    }
+    try {
+      await player.play(channel, result.tracks[0], {
+        nodeOptions: {
+          metadata: {
+            channel: message.channel,
+          },
+        },
+      });
+
+      const embed = new EmbedBuilder()
+        .setTitle("Added to queue")
+        .setDescription(`Added ${result.tracks[0].title} to the queue`)
+        .setThumbnail(result.tracks[0].thumbnail)
+        .setAuthor({
+          name: message.author.tag,
+          iconURL: message.author.displayAvatarURL(),
+        })
+        .setColor(0x00fa9a)
+        .setTimestamp();
+      await message.reply({ embeds: [embed] });
+      return true;
+    } catch (error) {
+      console.error(error);
+      return message.reply("An error occurred while trying to play the track.");
+    }
   }
 }
 
-const PlayCommand = async (message: Message, args: string) => {
-  const player = useMainPlayer();
+// const NowPlayingCommand = async (message: Message) => {
+//   const queue = useQueue(message.guildId as string);
 
-  const channel = message.member?.voice.channel;
-  if (!channel) {
-    return message.reply("You need to join a voice channel first!");
-  }
-  const query = args;
-  const result = await player.play(channel, query, {
-    nodeOptions: {
-      metadata: {
-        channel: message.channel,
-      },
-    },
-  });
+//   if (!queue) {
+//     return message.reply("I am not playing anything here.");
+//   }
 
-  await message.reply(`Added ${result.track.title} track(s) to the queue!`);
-};
+//   const currentTrack = queue.currentTrack;
 
-const NowPlayingCommand = async (message: Message) => {
-  const queue = useQueue(message.guildId as string);
+//   if (!currentTrack) {
+//     return message.reply("There is no track playing.");
+//   }
 
-  if (!queue) {
-    return message.reply("I am not playing anything here.");
-  }
+//   await message.reply(
+//     `Now playing: ${currentTrack.title} by ${currentTrack.author}`
+//   );
+// };
 
-  const currentTrack = queue.currentTrack;
+// const StopCommand = async (message: Message) => {
+//   const queue = useQueue(message.guildId as string);
+//   const channel = message.member?.voice.channel;
 
-  if (!currentTrack) {
-    return message.reply("There is no track playing.");
-  }
+//   if (!channel) {
+//     return message.reply("You need to join a voice channel first!");
+//   }
+//   if (!queue || !queue.isPlaying) {
+//     return message.reply("I am not playing anything here.");
+//   }
 
-  await message.reply(
-    `Now playing: ${currentTrack.title} by ${currentTrack.author}`
-  );
-};
+//   queue.node.stop();
 
-const StopCommand = async (message: Message) => {
-  const queue = useQueue(message.guildId as string);
-  const channel = message.member?.voice.channel;
-
-  if (!channel) {
-    return message.reply("You need to join a voice channel first!");
-  }
-  if (!queue || !queue.isPlaying) {
-    return message.reply("I am not playing anything here.");
-  }
-
-  queue.node.stop();
-
-  await message.reply("Stopped playing!");
-};
+//   await message.reply("Stopped playing!");
+// };

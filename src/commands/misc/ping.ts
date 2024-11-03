@@ -5,6 +5,7 @@ export const data: CommandData = {
   description: "Pong!!!",
 };
 
-export function run({ interaction, client, handler }: SlashCommandProps) {
-  interaction.reply(`:ping_pong: Pong! ${client.ws.ping}ms`);
+export async function run({ interaction, client, handler }: SlashCommandProps) {
+  await interaction.reply(`:ping_pong: Pong! ${client.ws.ping}ms`);
+  return true;
 }

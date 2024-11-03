@@ -1,6 +1,6 @@
 import type { CommandData, SlashCommandProps } from "commandkit";
 import { useMainPlayer } from "discord-player";
-import { ApplicationCommandOptionType } from "discord.js";
+import { ApplicationCommandOptionType, EmbedBuilder } from "discord.js";
 
 export const data: CommandData = {
   name: "play",
@@ -30,6 +30,17 @@ export async function run({ interaction, client, handler }: SlashCommandProps) {
   const result = await player.search(query, {
     requestedBy: interaction.user,
   });
+
+  console.log(result.tracks);
+  if (!result.tracks.length) {
+    const embed = new EmbedBuilder()
+      .setTitle("No tracks found")
+      .setDescription("No tracks were found for the given query")
+      .setColor(0xff0000)
+      .setTimestamp();
+    return interaction.followUp({ embeds: [embed] });
+  }
+
   try {
     await player.play(channel, result.tracks[0], {
       nodeOptions: {
@@ -38,9 +49,19 @@ export async function run({ interaction, client, handler }: SlashCommandProps) {
         },
       },
     });
-    await interaction.followUp(
-      `Added ${result.tracks[0].title} track(s) to the queue!`
-    );
+    const embed = new EmbedBuilder()
+      .setTitle("Added to queue")
+      .setDescription(`Added ${result.tracks[0].title} to the queue`)
+      .setThumbnail(result.tracks[0].thumbnail)
+      .setAuthor({
+        name: interaction.user.tag,
+        iconURL: interaction.user.displayAvatarURL(),
+      })
+      .setColor(0x00fa9a)
+      .setTimestamp();
+
+    await interaction.followUp({ embeds: [embed] });
+    return true;
   } catch (error) {
     console.error("Error handling command:", error);
     await interaction.followUp(
